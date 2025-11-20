@@ -91,7 +91,7 @@ type AuthServiceServer interface {
 	Login(context.Context, *LoginRequest) (*LoginResponse, error)
 	Refresh(context.Context, *RefreshRequest) (*RefreshResponse, error)
 	Validate(context.Context, *ValidateRequest) (*ValidateResponse, error)
-	mustEmbedUnimplementedAuthServiceServer()
+	// mustEmbedUnimplementedAuthServiceServer()
 }
 
 // UnimplementedAuthServiceServer must be embedded to have
@@ -119,9 +119,9 @@ func (UnimplementedAuthServiceServer) testEmbeddedByValue()                     
 // UnsafeAuthServiceServer may be embedded to opt out of forward compatibility for this service.
 // Use of this interface is not recommended, as added methods to AuthServiceServer will
 // result in compilation errors.
-type UnsafeAuthServiceServer interface {
-	mustEmbedUnimplementedAuthServiceServer()
-}
+// type UnsafeAuthServiceServer interface {
+// 	mustEmbedUnimplementedAuthServiceServer()
+// }
 
 func RegisterAuthServiceServer(s grpc.ServiceRegistrar, srv AuthServiceServer) {
 	// If the following call pancis, it indicates UnimplementedAuthServiceServer was
