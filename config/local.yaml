@@ -1,0 +1,4 @@
+env: "local"
+
+storage_path: "postgres://auth_user:auth_pass@localhost:5432/auth_db?sslmode=disable"
+token_ttl: 1h
