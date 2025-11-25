@@ -98,15 +98,15 @@
 Установка с Ubuntu
 
 ```bash
-curl -s https://packagecloud.io/install/repositories/golang-migrate/migrate/script.deb.sh | sudo bash.
+curl -s https://packagecloud.io/install/repositories/golang-migrate/migrate/script.deb.sh | sudo bash
 ```
 
 ```bash
-sudo apt-get update.
+sudo apt-get update
 ```
 
 ```bash
-sudo apt-get install migrate.
+sudo apt-get install migrate
 ```
 
 Проверяем
