@@ -3,18 +3,19 @@ package main
 import (
 	jwtman "auth_service/internal/JWT/access"
 	"auth_service/internal/config"
-	"auth_service/internal/controller"
+	grpccontroller "auth_service/internal/grpc_controller"
 	"auth_service/internal/logger"
-	"auth_service/internal/server"
 	"auth_service/internal/services/auth"
 	redis "auth_service/internal/storage/Redis"
 	postgresstorage "auth_service/internal/storage/postgresStorage"
-	"context"
-	"log/slog"
+	"auth_service/protos/gen/go/authservicegen"
+	"net"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
+
+	"google.golang.org/grpc"
 )
 
 func main() {
@@ -43,27 +44,40 @@ func main() {
 	// Auth сервис
 	authSvc := auth.NewAuth(logger, storage, rds, jwt)
 
-	// Контроллер
-	controller := controller.NewController(authSvc, logger)
+	// // Контроллер
+	// controller := controller.NewController(authSvc, logger)
 
 	// HTTP сервер
-	srv := server.NewServer(controller, logger)
+	// srv := server.NewServer(controller, logger)
 
 	// Канал для ловли сигнала остановки
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
 
-	srv.Start()
+	// srv.Start()
+
+	grpcServer := grpc.NewServer()
+
+	authservicegen.RegisterAuthServiceServer(
+		grpcServer,
+		grpccontroller.NewGRPCController(authSvc, logger),
+	)
+
+	go func() {
+		lis, _ := net.Listen("tcp", ":50051")
+		grpcServer.Serve(lis)
+	}()
 
 	<-stop
 	logger.Info("Получен сигнал завершения, останавливаем сервер...")
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
+	// ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	// defer cancel()
 
-	if err := srv.Shutdown(ctx); err != nil {
-		logger.Error("Ошибка при завершении сервера", slog.Any("error", err))
-	}
+	// if err := srv.Shutdown(ctx); err != nil {
+	// 	logger.Error("Ошибка при завершении сервера", slog.Any("error", err))
+	// }
+	grpcServer.GracefulStop()
 
 	logger.Info("Сервер корректно остановлен")
 }
