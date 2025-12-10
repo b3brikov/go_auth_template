@@ -4,12 +4,14 @@ import (
 	jwtman "auth_service/internal/JWT/access"
 	"auth_service/internal/config"
 	grpccontroller "auth_service/internal/grpc_controller"
+	"auth_service/internal/health"
 	"auth_service/internal/logger"
 	"auth_service/internal/services/auth"
 	redis "auth_service/internal/storage/Redis"
 	postgresstorage "auth_service/internal/storage/postgresStorage"
 	"auth_service/protos/gen/go/authservicegen"
 	"net"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
@@ -52,6 +54,9 @@ func main() {
 		lis, _ := net.Listen("tcp", ":50051")
 		grpcServer.Serve(lis)
 	}()
+	http.HandleFunc("/health", health.HealthCheck)
+
+	go func() { http.ListenAndServe(":8080", nil) }()
 
 	<-stop
 	logger.Info("Stopping server")
