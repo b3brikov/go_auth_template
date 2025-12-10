@@ -85,7 +85,7 @@ func (auth *Auth) Login(ctx context.Context, user models.NewUser) (*AuthResponse
 	if err := auth.StoreRefreshToken(ctx, struid, refreshToken); err != nil {
 		return nil, err
 	}
-	
+
 	auth.Logger.Debug("Успешно создан токен", slog.String("user_id", struid))
 	return &AuthResponse{AccessToken: accessToken, RefreshToken: refreshToken}, nil
 }
