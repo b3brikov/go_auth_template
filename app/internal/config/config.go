@@ -2,6 +2,7 @@ package config
 
 import (
 	"flag"
+	"fmt"
 	"os"
 	"time"
 
@@ -10,9 +11,9 @@ import (
 
 type Config struct {
 	Env          string        `yaml:"env" env-default:"local"`
-	Storage_path string        `yaml:"storage_path" env-required:"true"`
 	TokenTTL     time.Duration `yaml:"token_ttl" env-required:"true"`
 	RedisAddr    string        `yaml:"addr_redis" env-required:"true"`
+	Storage_path string
 }
 
 func MustLoad() *Config {
@@ -30,6 +31,12 @@ func MustLoad() *Config {
 	if err := cleanenv.ReadConfig(path, &cfg); err != nil {
 		panic("failed read config" + err.Error())
 	}
+	cfg.Storage_path = fmt.Sprintf(
+		"postgres://%s:%s@postgres:5432/%s?sslmode=disable",
+		os.Getenv("POSTGRES_USER"),
+		os.Getenv("POSTGRES_PASSWORD"),
+		os.Getenv("POSTGRES_DB"),
+	)
 
 	return &cfg
 }

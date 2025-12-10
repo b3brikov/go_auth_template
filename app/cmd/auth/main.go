@@ -56,7 +56,9 @@ func main() {
 	}()
 	http.HandleFunc("/health", health.HealthCheck)
 
-	go func() { http.ListenAndServe(":8080", nil) }()
+	go func() {
+		http.ListenAndServe(":8080", nil)
+	}()
 
 	<-stop
 	logger.Info("Stopping server")

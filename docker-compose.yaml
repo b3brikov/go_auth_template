@@ -43,6 +43,8 @@ services:
     command: ["redis-server", "--save", "", "--appendonly", "no"]
     networks:
       - auth_network
+    volumes:
+      - redis_data:/data
 
   auth_service:
     build: ./app
@@ -51,6 +53,8 @@ services:
     ports:
       - "50051:50051"
       - "8080:8080"
+    env_file:
+      - .env
     depends_on:
       postgres:
         condition: service_healthy
@@ -58,6 +62,8 @@ services:
         condition: service_started
     networks:
       - auth_network
+    volumes:
+      - /app
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8080/health || exit 1"]
       interval: 5s
@@ -66,6 +72,8 @@ services:
 
 volumes:
   auth_db_data:
+  redis_data:
+    driver: local
 
 networks:
   auth_network:
