@@ -6,6 +6,7 @@ import (
 	"auth_service/protos/gen/go/authservicegen"
 	"context"
 	"log/slog"
+	"net/mail"
 	"strings"
 
 	"google.golang.org/grpc/codes"
@@ -26,7 +27,7 @@ func (s *AuthGRPCServer) Register(ctx context.Context, req *authservicegen.Regis
 	if req.Email == "" || req.Password == "" {
 		return nil, status.Error(codes.InvalidArgument, "email or password missing")
 	}
-	if !strings.Contains(req.Email, "@") {
+	if _, err := mail.ParseAddress(req.Email); err != nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid email")
 	}
 	user := models.NewUser{
