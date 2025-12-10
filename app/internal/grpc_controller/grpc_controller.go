@@ -26,7 +26,9 @@ func (s *AuthGRPCServer) Register(ctx context.Context, req *authservicegen.Regis
 	if req.Email == "" || req.Password == "" {
 		return nil, status.Error(codes.InvalidArgument, "email or password missing")
 	}
-
+	if !strings.Contains(req.Email, "@") {
+		return nil, status.Error(codes.InvalidArgument, "invalid email")
+	}
 	user := models.NewUser{
 		Email:    req.Email,
 		HashPass: []byte(req.Password),
