@@ -42,7 +42,7 @@ func (s *AuthGRPCServer) Register(ctx context.Context, req *authservicegen.Regis
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	s.Logger.Info("Создан пользователь", slog.String("email", req.Email))
+	s.Logger.Info("User created", slog.String("email", req.Email))
 	return &authservicegen.StatusResponse{Status: "ok"}, nil
 }
 
@@ -62,7 +62,7 @@ func (s *AuthGRPCServer) Login(ctx context.Context, req *authservicegen.LoginReq
 		}
 		return nil, status.Error(codes.Internal, err.Error())
 	}
-	s.Logger.Debug("Вошел пользователь", slog.String("email", req.Email))
+	s.Logger.Debug("User logged in", slog.String("email", req.Email))
 	return &authservicegen.TokenPair{AccessToken: tokens.AccessToken, RefreshToken: tokens.RefreshToken}, nil
 }
 
@@ -75,7 +75,7 @@ func (s *AuthGRPCServer) Refresh(ctx context.Context, req *authservicegen.Refres
 	if err != nil {
 		return nil, status.Error(codes.Unauthenticated, "refresh token expired")
 	}
-	s.Logger.Debug("Обновился токен", slog.String("prev_token", req.RefreshToken))
+	s.Logger.Debug("Token refreshed", slog.String("prev_token", req.RefreshToken))
 	return &authservicegen.TokenPair{AccessToken: token.AccessToken, RefreshToken: token.RefreshToken}, nil
 }
 
@@ -83,6 +83,6 @@ func (s *AuthGRPCServer) Logout(ctx context.Context, req *authservicegen.LogoutR
 	if err := s.AuthService.Logout(ctx, req.RefreshToken); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
-	s.Logger.Debug("Пользователь разлогинился", slog.String("token", req.RefreshToken))
+	s.Logger.Debug("User logout", slog.String("token", req.RefreshToken))
 	return &authservicegen.StatusResponse{Status: "ok"}, nil
 }

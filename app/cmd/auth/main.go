@@ -19,42 +19,27 @@ import (
 )
 
 func main() {
-	// Загружаем конфиг
 	cfg := config.MustLoad()
 
-	// Запуск логгера
 	logger, err := logger.NewLogger()
 	if err != nil {
-		panic("Не удалось инициализировать логгер: " + err.Error())
+		panic("Failed init logger: " + err.Error())
 	}
 
-	// Подключение к Postgres
 	storage := postgresstorage.NewPostgres(cfg.Storage_path, logger)
 
-	// Подключение к Redis
-	rds := redis.NewRedisClient()
-	logger.Info("Redis подключен успешно")
+	rds := redis.NewRedisClient(cfg.RedisAddr)
+	logger.Info("Redis succesfully connected")
 
-	// JWT менеджер
 	jwt := &jwtman.JWTManager{
 		SecretKey:     []byte("test"),
 		TokenDuration: 15 * time.Minute,
 	}
 
-	// Auth сервис
 	authSvc := auth.NewAuth(logger, storage, rds, jwt)
 
-	// // Контроллер
-	// controller := controller.NewController(authSvc, logger)
-
-	// HTTP сервер
-	// srv := server.NewServer(controller, logger)
-
-	// Канал для ловли сигнала остановки
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
-
-	// srv.Start()
 
 	grpcServer := grpc.NewServer()
 
@@ -69,15 +54,9 @@ func main() {
 	}()
 
 	<-stop
-	logger.Info("Получен сигнал завершения, останавливаем сервер...")
+	logger.Info("Stopping server")
 
-	// ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	// defer cancel()
-
-	// if err := srv.Shutdown(ctx); err != nil {
-	// 	logger.Error("Ошибка при завершении сервера", slog.Any("error", err))
-	// }
 	grpcServer.GracefulStop()
 
-	logger.Info("Сервер корректно остановлен")
+	logger.Info("Server stopped correctly")
 }

@@ -1,4 +1,6 @@
 env: "local"
 
+
 storage_path: "postgres://auth_user:auth_pass@postgres:5432/auth_db?sslmode=disable"
 token_ttl: 1h
+addr_redis: "redis:6379"

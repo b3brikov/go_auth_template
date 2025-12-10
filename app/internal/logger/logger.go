@@ -41,7 +41,7 @@ func NewLogger() (*slog.Logger, error) {
 func fetchLogLevel() string {
 	var res string
 
-	flag.StringVar(&res, "logLevel", "", "конфигурация уровня логирования")
+	flag.StringVar(&res, "logLevel", "", "config logging level")
 	flag.Parse()
 
 	return res

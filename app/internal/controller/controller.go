@@ -79,7 +79,7 @@ func (c *AuthController) RegisterHandler(w http.ResponseWriter, r *http.Request)
 
 	w.WriteHeader(http.StatusOK)
 	c.Logger.Info("Создан пользователь", slog.String("email", user.Email))
-	json.NewEncoder(w).Encode(map[string]string{"status": "ok"}) //Позже поменять
+	json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
 }
 
 func (c *AuthController) RefreshHandler(w http.ResponseWriter, r *http.Request) {
@@ -125,5 +125,5 @@ func (c *AuthController) LogoutHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	c.Logger.Info("Пользователь разлогинился", slog.String("token", token.Token[:8]))
-	json.NewEncoder(w).Encode(map[string]string{"status": "ok"}) //Позже поменять
+	json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
 }

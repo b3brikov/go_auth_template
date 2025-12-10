@@ -37,9 +37,9 @@ func NewServer(controller *controller.AuthController, logger *slog.Logger) *Serv
 
 func (s *Server) Start() {
 	go func() {
-		s.Logger.Info("Сервер запускается...", slog.String("port", s.HttpServer.Addr))
+		s.Logger.Info("Server starting", slog.String("port", s.HttpServer.Addr))
 		if err := s.HttpServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			s.Logger.Error("Ошибка сервера", slog.Any("error", err))
+			s.Logger.Error("Server error", slog.Any("error", err))
 		}
 	}()
 }

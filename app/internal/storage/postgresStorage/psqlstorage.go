@@ -18,17 +18,16 @@ type Postgres struct {
 func NewPostgresDB(log *slog.Logger, dsn string) *sql.DB {
 	db, err := sql.Open("postgres", dsn)
 	if err != nil {
-		log.Error("Не удалось открыть базу", slog.Any("error", err))
+		log.Error("Cannot open database", slog.Any("error", err))
 		panic(err)
 	}
 
-	// проверка соединения
 	if err := db.Ping(); err != nil {
-		log.Error("Нет сигнала с базой", slog.Any("error", err))
+		log.Error("No signal with database", slog.Any("error", err))
 		panic(err)
 	}
 
-	log.Info("База данных подключена успешно")
+	log.Info("Database connected succesfully")
 	return db
 }
 
@@ -37,8 +36,8 @@ func NewPostgres(dsn string, logger *slog.Logger) *Postgres {
 	return &Postgres{Database: db, Logger: logger}
 }
 
+// ))))
 func (p *Postgres) IsAdmin(ctx context.Context, UID int) bool {
-	// Пока всегда false
 	return false
 }
 
@@ -52,9 +51,9 @@ func (p *Postgres) GetUserByEmail(ctx context.Context, email string) (models.Use
 	err := row.Scan(&user.UID, &user.Email, &user.HashPass)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return models.User{}, errors.New("пользователь не найден")
+			return models.User{}, errors.New("user not found")
 		}
-		p.Logger.Error("Ошибка при получении пользователя", slog.String("email", email))
+		p.Logger.Error("Getting user failed", slog.String("email", email))
 		return models.User{}, err
 	}
 
@@ -65,7 +64,7 @@ func (p *Postgres) CreateNewUser(ctx context.Context, newUser models.NewUser) er
 	query := `INSERT INTO users (email, password) VALUES ($1, $2)`
 	_, err := p.Database.ExecContext(ctx, query, newUser.Email, newUser.HashPass)
 	if err != nil {
-		p.Logger.Error("Ошибка при создании пользователя", slog.String("email", newUser.Email), slog.Any("error", err))
+		p.Logger.Error("Failure while creating user", slog.String("email", newUser.Email), slog.Any("error", err))
 		return err
 	}
 	return nil

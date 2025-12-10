@@ -10,17 +10,15 @@ import (
 )
 
 type JWTManager struct {
-	SecretKey     []byte        // Секрет для jwt
-	TokenDuration time.Duration // Длительность токена доступа (вдавить 10-15 минут)
+	SecretKey     []byte
+	TokenDuration time.Duration
 }
 
-// Содержимое токена
 type Claims struct {
-	UserID string `json:"user_id"`
+	UserID string
 	jwt.RegisteredClaims
 }
 
-// Генерируем токен
 func (manager *JWTManager) GenerateAccessToken(UID int) (string, error) {
 	jti := uuid.New().String()
 	claims := &Claims{UserID: strconv.Itoa(UID),
@@ -33,7 +31,7 @@ func (manager *JWTManager) GenerateAccessToken(UID int) (string, error) {
 	return token.SignedString(manager.SecretKey)
 }
 
-// Это тут наверное не нужно, но это верификация токена доступа
+// )))))
 func (manager *JWTManager) VerifyToken(tokenString string) (*Claims, error) {
 	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (interface{}, error) {
 		return manager.SecretKey, nil

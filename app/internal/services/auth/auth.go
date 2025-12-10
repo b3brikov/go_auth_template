@@ -26,7 +26,7 @@ type Auth struct {
 	Logger  *slog.Logger
 	Storage UserRepository
 	JWT     *jwtman.JWTManager
-	Redis   *redis.Client
+	Redis   *redis.Client //TODO interface needed
 }
 
 type AuthResponse struct {
@@ -34,6 +34,7 @@ type AuthResponse struct {
 	RefreshToken string `json:"refresh_token"`
 }
 
+// Init service logic floor
 func NewAuth(logger *slog.Logger, Storage UserRepository, Redis *redis.Client, JWT *jwtman.JWTManager) *Auth {
 	return &Auth{Logger: logger, Storage: Storage, JWT: JWT, Redis: Redis}
 }
@@ -47,11 +48,11 @@ func CheckPasswordHash(password, hash []byte) bool {
 	return bcrypt.CompareHashAndPassword([]byte(hash), []byte(password)) == nil
 }
 
+// Creating new user
 func (auth *Auth) Register(ctx context.Context, user models.NewUser) error {
 	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
 
-	// Хешируем пароль
 	hashed, err := HashPassword(user.HashPass)
 	if err != nil {
 		return err
@@ -61,6 +62,7 @@ func (auth *Auth) Register(ctx context.Context, user models.NewUser) error {
 	return auth.Storage.CreateNewUser(ctx, user)
 }
 
+// Getting pair of refresh + access tokens
 func (auth *Auth) Login(ctx context.Context, user models.NewUser) (*AuthResponse, error) {
 	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
@@ -71,8 +73,8 @@ func (auth *Auth) Login(ctx context.Context, user models.NewUser) (*AuthResponse
 	}
 
 	if ok := CheckPasswordHash(user.HashPass, storedUser.HashPass); !ok {
-		auth.Logger.Info("Неверный пароль от пользователя", slog.String(user.Email, ""))
-		return nil, errors.New("неправильный пароль")
+		auth.Logger.Info("Wrong password from user", slog.String(user.Email, ""))
+		return nil, errors.New("wrong password")
 	}
 
 	accessToken, err := auth.JWT.GenerateAccessToken(storedUser.UID)
@@ -86,17 +88,17 @@ func (auth *Auth) Login(ctx context.Context, user models.NewUser) (*AuthResponse
 		return nil, err
 	}
 
-	auth.Logger.Debug("Успешно создан токен", slog.String("user_id", struid))
+	auth.Logger.Debug("Token created succesfully", slog.String("user_id", struid))
 	return &AuthResponse{AccessToken: accessToken, RefreshToken: refreshToken}, nil
 }
 
-// Сохраняем в Redis рефреш токен
+// Saving refresh token in redis
 func (auth *Auth) StoreRefreshToken(ctx context.Context, UID, refreshToken string) error {
 	key := fmt.Sprintf("refresh:%s", refreshToken)
 	return auth.Redis.Set(ctx, key, UID, auth.JWT.TokenDuration).Err()
 }
 
-// Проверка рефреш токена
+// Verify incoming refresh token
 func (auth *Auth) VerifyRefreshToken(ctx context.Context, refreshToken string) (string, error) {
 	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
@@ -108,6 +110,7 @@ func (auth *Auth) VerifyRefreshToken(ctx context.Context, refreshToken string) (
 	return userID, err
 }
 
+// Creating new pair of refresh + access tokens
 func (auth *Auth) Refresh(ctx context.Context, refreshToken string) (*AuthResponse, error) {
 	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
@@ -120,17 +123,15 @@ func (auth *Auth) Refresh(ctx context.Context, refreshToken string) (*AuthRespon
 		return nil, fmt.Errorf("invalid stored user id: %w", err)
 	}
 
-	// Генерация нового Access Token
 	accessToken, err := auth.JWT.GenerateAccessToken(uid)
 	if err != nil {
 		return nil, err
 	}
-	auth.Logger.Debug("Создан новый токен", slog.String("user_id", userID))
+	auth.Logger.Debug("Created new token", slog.String("user_id", userID))
 	oldKey := fmt.Sprintf("refresh:%s", refreshToken)
 	if err := auth.Redis.Del(ctx, oldKey).Err(); err != nil {
-		auth.Logger.Warn("Не удалось удалить старый refresh токен", slog.String("refresh", refreshToken))
+		auth.Logger.Warn("Failed delete previous refresh token", slog.String("refresh", refreshToken))
 	}
-	// Ротация Refresh Token (по желанию)
 	newRefreshToken := refresh.GenerateRefreshToken()
 
 	if err := auth.StoreRefreshToken(ctx, userID, newRefreshToken); err != nil {
@@ -142,6 +143,7 @@ func (auth *Auth) Refresh(ctx context.Context, refreshToken string) (*AuthRespon
 	}, nil
 }
 
+// Deleting refresh token
 func (auth *Auth) Logout(ctx context.Context, refreshToken string) error {
 	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
@@ -152,6 +154,6 @@ func (auth *Auth) Logout(ctx context.Context, refreshToken string) error {
 		return err
 	}
 
-	auth.Logger.Debug("Пользователь разлогинился", slog.String("refresh_token", refreshToken))
+	auth.Logger.Debug("User logout", slog.String("refresh_token", refreshToken))
 	return nil
 }

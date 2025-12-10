@@ -12,6 +12,7 @@ type Config struct {
 	Env          string        `yaml:"env" env-default:"local"`
 	Storage_path string        `yaml:"storage_path" env-required:"true"`
 	TokenTTL     time.Duration `yaml:"token_ttl" env-required:"true"`
+	RedisAddr    string        `yaml:"addr_redis" env-required:"true"`
 }
 
 func MustLoad() *Config {
