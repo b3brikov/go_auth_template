@@ -5,4 +5,4 @@ COPY go.mod go.sum ./
 RUN go mod download
 COPY . .
 RUN go build cmd/auth/main.go
-CMD ["./main", "--config=./config/local.yaml"]
+CMD ["./main"]
