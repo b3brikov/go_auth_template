@@ -62,8 +62,6 @@ services:
         condition: service_started
     networks:
       - auth_network
-    volumes:
-      - /app
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8080/health || exit 1"]
       interval: 5s
