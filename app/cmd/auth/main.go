@@ -30,7 +30,8 @@ func main() {
 
 	storage := postgresstorage.NewPostgres(cfg.Storage_path, logger)
 
-	rds := redis.NewRedisClient(cfg.RedisAddr)
+	rds := &redis.RedisStorage{Redis: redis.NewRedisClient(cfg.RedisAddr)}
+
 	logger.Info("Redis succesfully connected")
 
 	jwt := &jwtman.JWTManager{

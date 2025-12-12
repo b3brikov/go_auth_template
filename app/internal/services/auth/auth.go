@@ -22,11 +22,17 @@ type UserRepository interface {
 	IsAdmin(ctx context.Context, UID int) bool
 }
 
+type SessionStorage interface {
+	SetSession(ctx context.Context, key, userID string, ttl time.Duration) error
+	GetSession(ctx context.Context, token string) (string, error)
+	DeleteSession(ctx context.Context, token string) error
+}
+
 type Auth struct {
 	Logger  *slog.Logger
 	Storage UserRepository
 	JWT     *jwtman.JWTManager
-	Redis   *redis.Client //TODO interface needed
+	Redis   SessionStorage
 }
 
 type AuthResponse struct {
@@ -35,7 +41,7 @@ type AuthResponse struct {
 }
 
 // Init service logic floor
-func NewAuth(logger *slog.Logger, Storage UserRepository, Redis *redis.Client, JWT *jwtman.JWTManager) *Auth {
+func NewAuth(logger *slog.Logger, Storage UserRepository, Redis SessionStorage, JWT *jwtman.JWTManager) *Auth {
 	return &Auth{Logger: logger, Storage: Storage, JWT: JWT, Redis: Redis}
 }
 
@@ -95,7 +101,7 @@ func (auth *Auth) Login(ctx context.Context, user models.NewUser) (*AuthResponse
 // Saving refresh token in redis
 func (auth *Auth) StoreRefreshToken(ctx context.Context, UID, refreshToken string) error {
 	key := fmt.Sprintf("refresh:%s", refreshToken)
-	return auth.Redis.Set(ctx, key, UID, auth.JWT.TokenDuration).Err()
+	return auth.Redis.SetSession(ctx, key, UID, auth.JWT.TokenDuration)
 }
 
 // Verify incoming refresh token
@@ -103,7 +109,7 @@ func (auth *Auth) VerifyRefreshToken(ctx context.Context, refreshToken string) (
 	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
 	key := fmt.Sprintf("refresh:%s", refreshToken)
-	userID, err := auth.Redis.Get(ctx, key).Result()
+	userID, err := auth.Redis.GetSession(ctx, key)
 	if err == redis.Nil {
 		return "", errors.New("invalid or expired refresh token")
 	}
@@ -129,7 +135,7 @@ func (auth *Auth) Refresh(ctx context.Context, refreshToken string) (*AuthRespon
 	}
 	auth.Logger.Debug("Created new token", slog.String("user_id", userID))
 	oldKey := fmt.Sprintf("refresh:%s", refreshToken)
-	if err := auth.Redis.Del(ctx, oldKey).Err(); err != nil {
+	if err := auth.Redis.DeleteSession(ctx, oldKey); err != nil {
 		auth.Logger.Warn("Failed delete previous refresh token", slog.String("refresh", refreshToken))
 	}
 	newRefreshToken := refresh.GenerateRefreshToken()
@@ -149,7 +155,7 @@ func (auth *Auth) Logout(ctx context.Context, refreshToken string) error {
 	defer cancel()
 
 	key := fmt.Sprintf("refresh:%s", refreshToken)
-	err := auth.Redis.Del(ctx, key).Err()
+	err := auth.Redis.DeleteSession(ctx, key)
 	if err != nil {
 		return err
 	}
