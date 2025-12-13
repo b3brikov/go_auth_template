@@ -35,7 +35,7 @@ func main() {
 	logger.Info("Redis succesfully connected")
 
 	jwt := &jwtman.JWTManager{
-		SecretKey:     []byte("test"),
+		SecretKey:     []byte(os.Getenv("JWT_SECRET")),
 		TokenDuration: 15 * time.Minute,
 	}
 
